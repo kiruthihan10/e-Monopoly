@@ -30,4 +30,7 @@ class Transaction(models.Model):
     def __str__(self)->str:
         return f'TransactionID: {self.TransactionID} was made by {self.receiver} to {self.sender} for {self.Amount} on {self.Date}'
 
+    def player_on_game(self, player:settings.AUTH_USER_MODEL)->bool:
+        return self.sender == player or self.receiver == player
+
 # Create your models here.

@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Transaction, Game
-from django.db.models import Q, query
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -20,10 +20,10 @@ class GameSerializer(serializers.ModelSerializer):
         model = Game
         fields = ('GameID','Banker','players')
 
-    def create(self, validated_data):
+    def create(self, validated_data)->Game:
         return Game.objects.create(**validated_data)
     
-    def get_players(self, obj:Game):
+    def get_players(self, obj:Game)->list:
         transactions = Transaction.objects.filter(Game=obj)
         players = []
         for transaction in transactions:
@@ -44,13 +44,13 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = 'TransactionID','Game','receiver','sender','Amount'
 
-
 class PlayerSerializer(serializers.ModelSerializer):
-
+    receiver = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True)
+    Game = serializers.SlugRelatedField(slug_field='GameID',queryset=Game.objects.all(),required=True)
+    Date = serializers.DateTimeField(write_only=True)
+    Note = serializers.CharField(write_only=True)
+    Amount = serializers.IntegerField(write_only=True)
+    sender = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True,write_only=True)
     class Meta:
-        model = User
-        fields = '__all__'
-
-    def get_all_games(self, obj:User):
-        games = Game.objects.all()
-        return [game for game in games if obj in game.get_all_players()]
+        model = Transaction
+        fields = ('receiver','Game','Date','Note','Amount','sender')
