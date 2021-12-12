@@ -16,9 +16,11 @@ Including another URLconf
 from django.contrib import admin
 from django.conf.urls import url, include
 from django.urls import path
+from transactions.urls import router as transaction_router
 from user_management.urls import router as user_management_router
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     url(r'^users/', include(user_management_router.urls)),
+    url(r'^transactions/',include(transaction_router.urls)),
 ]

@@ -1,16 +1,30 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Transaction, Game
-from django.db.models import Q
+from django.db.models import Q, query
+
+User = get_user_model()
 
 class GameSerializer(serializers.ModelSerializer):
-    players = serializers.SerializerMethodField('get_players')
+    players = serializers.SerializerMethodField('get_players', read_only=True)
+    Banker = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True,)
+
+    # def __init__(self, banker:User = None, *args, **kwargs):
+    #     if banker is None:
+    #         self.Banker = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True,)
+    #     else:
+    #         self.Banker = banker
+    #     super().__init__(*args, **kwargs)
+
     class Meta:
         model = Game
-        fields = ('__all__','players')
+        fields = ('GameID','Banker','players')
+
+    def create(self, validated_data):
+        return Game.objects.create(**validated_data)
     
     def get_players(self, obj:Game):
-        transactions = Transaction.objects.filter(game=obj)
+        transactions = Transaction.objects.filter(Game=obj)
         players = []
         for transaction in transactions:
             if transaction.receiver not in players:
@@ -24,11 +38,13 @@ class GameSerializer(serializers.ModelSerializer):
         return players
 
 class TransactionSerializer(serializers.ModelSerializer):
+    receiver = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True)
+    sender = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True)
     class Meta:
         model = Transaction
-        fields = '__all__'
+        fields = 'TransactionID','Game','receiver','sender','Amount'
 
-User = get_user_model()
+
 class PlayerSerializer(serializers.ModelSerializer):
 
     class Meta:
