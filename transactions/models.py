@@ -8,6 +8,16 @@ class Game(models.Model):
     def __str__(self)->str:
         return f'GameID: {self.GameID} with Banker as {self.Banker}'
 
+    def get_all_players(self)->list:
+        transactions = Transaction.objects.filter(Game=self)
+        players = []
+        for transaction in transactions:
+            if transaction.sender not in players:
+                players.append(transaction.sender)
+            if transaction.receiver not in players:
+                players.append(transaction.receiver)
+        return players
+
 class Transaction(models.Model):
     TransactionID = models.AutoField(primary_key=True)
     Game = models.ForeignKey(Game, on_delete=models.CASCADE)
