@@ -17,13 +17,27 @@ class Game(models.Model):
             if transaction.receiver not in players:
                 players.append(transaction.receiver)
         return players
+    
+    def get_players_balance(self) -> dict:
+        transactions = Transaction.objects.filter(Game=self)
+        players = {}
+        for transaction in transactions:
+            if transaction.receiver in players:
+                players[transaction.receiver] += transaction.Amount
+            else:
+                players[transaction.receiver] = transaction.Amount
+            if transaction.sender not in players:
+                players[transaction.sender] = -transaction.Amount
+            else:
+                players[transaction.sender] -= transaction.Amount
+        return players
 
 class Transaction(models.Model):
     TransactionID = models.AutoField(primary_key=True)
     Game = models.ForeignKey(Game, on_delete=models.CASCADE)
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='player')
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='receiver')
-    Amount = models.IntegerField()
+    Amount = models.PositiveIntegerField()
     Note = models.CharField(max_length=50, blank=True, null=True)
     Date = models.DateTimeField(auto_now_add=True)
 

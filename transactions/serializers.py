@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Transaction, Game
-from django.db.models import Q
 
 User = get_user_model()
 
@@ -40,17 +39,19 @@ class GameSerializer(serializers.ModelSerializer):
 class TransactionSerializer(serializers.ModelSerializer):
     receiver = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True)
     sender = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True)
+    Game = serializers.SlugRelatedField(slug_field='GameID',queryset=Game.objects.all(),required=True)
+
     class Meta:
         model = Transaction
-        fields = 'TransactionID','Game','receiver','sender','Amount'
-
+        fields = 'Game','receiver','sender','Amount'
+    
 class PlayerSerializer(serializers.ModelSerializer):
     receiver = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True)
     Game = serializers.SlugRelatedField(slug_field='GameID',queryset=Game.objects.all(),required=True)
-    Date = serializers.DateTimeField(write_only=True)
     Note = serializers.CharField(write_only=True)
     Amount = serializers.IntegerField(write_only=True)
+    Date  = serializers.DateTimeField(read_only=True)
     sender = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True,write_only=True)
     class Meta:
         model = Transaction
-        fields = ('receiver','Game','Date','Note','Amount','sender')
+        fields = ('TransactionID','receiver','Game','Note','Amount','sender','Date')
