@@ -6,8 +6,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.db.models import Q
 
-User = get_user_model()
+import requests
 
+User = get_user_model()
 
 class DefaultMixin(object):
     authentication_classes = (
@@ -19,7 +20,32 @@ class DefaultMixin(object):
     )
     paginate_by = 25
 
-class TransactionViewSet(DefaultMixin,viewsets.ModelViewSet):
+class UpdateHookMixin(object):
+
+    def _build_hook_url(self, obj):
+        return f'http://localhost:8080/{obj.GameID}/'
+
+    def _send_hook_request(self, obj, method):
+        url = self._build_hook_url(obj)
+        if isinstance(obj, Transaction):
+            try:
+                response = requests.request(method, url, timeout=0.5)
+                response.raise_for_status()
+            except requests.exceptions.ConnectionError:
+            # Host could not be resolved or the connection was refused
+                pass
+            except requests.exceptions.Timeout:
+            # Request timed out
+                pass
+            except requests.exceptions.RequestException:
+            # Server responsed with 4XX or 5XX status code
+                pass
+
+    def post_save(self, obj, created=False):
+        method = 'POST' if created else 'PUT'
+        self._send_hook_request(obj, method)
+
+class TransactionViewSet(DefaultMixin,UpdateHookMixin,viewsets.ModelViewSet):
     lookup_field = 'game'
     lookup_url_kwarg = 'game'
     queryset = Transaction.objects.all()
@@ -137,5 +163,3 @@ class TransactionHistoryViewSet(DefaultMixin,viewsets.ReadOnlyModelViewSet):
 
     def retrieve(self, request, game=None):
         return self.list(request, game)
-
-# Create your views here.
