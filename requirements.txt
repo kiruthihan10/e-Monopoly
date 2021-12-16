@@ -1,6 +1,6 @@
 django==3.2.8
-djangorestframework
+djangorestframework==3.12.4
 psycopg2
 django_heroku
 gunicorn
-requests
+requests==2.26.0
