@@ -163,3 +163,4 @@ class TransactionHistoryViewSet(DefaultMixin,viewsets.ReadOnlyModelViewSet):
 
     def retrieve(self, request, game=None):
         return self.list(request, game)
+
