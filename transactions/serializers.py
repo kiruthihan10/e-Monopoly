@@ -22,19 +22,19 @@ class GameSerializer(serializers.ModelSerializer):
     def create(self, validated_data)->Game:
         return Game.objects.create(**validated_data)
     
-    def get_players(self, obj:Game)->list:
+    def get_players(self, obj:Game) -> list:
         transactions = Transaction.objects.filter(Game=obj)
-        players = []
+        players = {}
         for transaction in transactions:
-            if transaction.receiver not in players:
-                players.append({transaction.player:transaction.Amount})
+            if str(transaction.receiver) not in players:
+                players[str(transaction.receiver)] = transaction.Amount
             else:
-                players[transaction.player] += transaction.Amount
-            if transaction.sender not in players:
-                players.append({transaction.player:-transaction.Amount})
+                players[str(transaction.receiver)] += transaction.Amount
+            if str(transaction.sender) not in players:
+                players[str(transaction.sender)] = -transaction.Amount
             else:
-                players[transaction.player] -= transaction.Amount
-        return players
+                players[str(transaction.sender)] -= transaction.Amount
+        return [{'name':key,'value':value} for key, value in players.items()]
 
 class TransactionSerializer(serializers.ModelSerializer):
     receiver = serializers.SlugRelatedField(slug_field=User.USERNAME_FIELD,queryset=User.objects.all(),required=True)

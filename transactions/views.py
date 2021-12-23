@@ -7,6 +7,7 @@ from rest_framework import status
 from django.db.models import Q
 
 import requests
+import json
 
 User = get_user_model()
 
@@ -23,21 +24,25 @@ class DefaultMixin(object):
 class UpdateHookMixin(object):
 
     def _build_hook_url(self, obj):
-        return f'http://localhost:8080/{obj.GameID}/'
+        return f'http://localhost:9000/{obj.GameID}'
 
     def _send_hook_request(self, obj, method):
         url = self._build_hook_url(obj)
-        if isinstance(obj, Transaction):
+        if isinstance(obj, Game):
             try:
-                response = requests.request(method, url, timeout=0.5)
+                message = json.dumps(obj.get_players_balance(True))
+                response = requests.request(method, url, data=message, timeout=0.5)
                 response.raise_for_status()
             except requests.exceptions.ConnectionError:
             # Host could not be resolved or the connection was refused
+                print("Connection Error")
                 pass
             except requests.exceptions.Timeout:
+                print("Time out")
             # Request timed out
                 pass
             except requests.exceptions.RequestException:
+                print("Request Exception")
             # Server responsed with 4XX or 5XX status code
                 pass
 
@@ -45,7 +50,7 @@ class UpdateHookMixin(object):
         method = 'POST' if created else 'PUT'
         self._send_hook_request(obj, method)
 
-class TransactionViewSet(DefaultMixin,UpdateHookMixin,viewsets.ModelViewSet):
+class TransactionViewSet(DefaultMixin,UpdateHookMixin,viewsets.ModelViewSet):##Make new transactions on game or retrieve all transactions
     lookup_field = 'game'
     lookup_url_kwarg = 'game'
     queryset = Transaction.objects.all()
@@ -56,12 +61,11 @@ class TransactionViewSet(DefaultMixin,UpdateHookMixin,viewsets.ModelViewSet):
 
     def create(self, request)->Response:
         data = request.data.copy()
+        print(data)
         data['sender'] = request.user.get_username()
-        print(data['sender'],data['receiver'])
         if data['sender'] == data['receiver']:
             return Response({"error": "Sender and receiver cannot be the same"}, status=status.HTTP_400_BAD_REQUEST)
         game = Game.objects.get(pk=request.data['Game'])
-        print(game)
         transactions = Transaction.objects.all().filter(Game=game.GameID)
         new_player = not any(
             transaction.player_on_game(request.user)
@@ -74,6 +78,7 @@ class TransactionViewSet(DefaultMixin,UpdateHookMixin,viewsets.ModelViewSet):
         serializer = TransactionSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
+            self.post_save(GameSerializer(instance=game).instance)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -87,7 +92,7 @@ class TransactionViewSet(DefaultMixin,UpdateHookMixin,viewsets.ModelViewSet):
         # str_players = {str(player): players[player] for player in players}
         return Response(str_players)
 
-class GameViewSet(DefaultMixin,viewsets.ModelViewSet):
+class GameViewSet(DefaultMixin,viewsets.ModelViewSet):## Create a new game and load all games
     queryset = Game.objects.all()
     serializer_class = GameSerializer
 
@@ -98,7 +103,7 @@ class GameViewSet(DefaultMixin,viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class PlayerViewSet(DefaultMixin,viewsets.ModelViewSet):
+class PlayerViewSet(DefaultMixin,viewsets.ModelViewSet):## Add new Player into game and get all the past games of a specific player
     queryset = Transaction.objects.all()
     serializer_class = PlayerSerializer
 
@@ -145,7 +150,7 @@ class PlayerViewSet(DefaultMixin,viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class TransactionHistoryViewSet(DefaultMixin,viewsets.ReadOnlyModelViewSet):
+class TransactionHistoryViewSet(DefaultMixin,viewsets.ReadOnlyModelViewSet):## Retrieve all transactions made by a specific user
     lookup_field = 'game'
     lookup_url_kwarg = 'game'
     queryset = Transaction.objects.all()

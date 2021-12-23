@@ -18,18 +18,30 @@ class Game(models.Model):
                 players.append(transaction.receiver)
         return players
     
-    def get_players_balance(self) -> dict:
+    def get_players_balance(self, user_str:bool = False) -> dict:
         transactions = Transaction.objects.filter(Game=self)
         players = {}
         for transaction in transactions:
-            if transaction.receiver in players:
-                players[transaction.receiver] += transaction.Amount
+            if transaction.receiver in players or str(transaction.receiver) in players:
+                if user_str:
+                    players[str(transaction.receiver)] += transaction.Amount
+                else:
+                    players[transaction.receiver] += transaction.Amount
             else:
-                players[transaction.receiver] = transaction.Amount
-            if transaction.sender not in players:
-                players[transaction.sender] = -transaction.Amount
+                if user_str:
+                    players[str(transaction.receiver)] = transaction.Amount
+                else:
+                    players[transaction.receiver] = transaction.Amount
+            if transaction.sender not in players or str(transaction.sender) in players:
+                if user_str:
+                    players[str(transaction.sender)] = -transaction.Amount
+                else:
+                    players[transaction.sender] = -transaction.Amount
             else:
-                players[transaction.sender] -= transaction.Amount
+                if user_str:
+                    players[str(transaction.sender)] -= transaction.Amount
+                else:
+                    players[transaction.sender] -= transaction.Amount
         return players
 
 class Transaction(models.Model):
