@@ -4,4 +4,4 @@ psycopg2
 django_heroku
 gunicorn
 requests==2.26.0
-corsheaders
+django-cors-headers
