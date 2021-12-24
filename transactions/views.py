@@ -24,13 +24,14 @@ class DefaultMixin(object):
 class UpdateHookMixin(object):
 
     def _build_hook_url(self, obj):
-        return f'http://localhost:9000/{obj.GameID}'
+        return f'https://e-monopoly-pipeline.herokuapp.com/{obj.GameID}'
 
     def _send_hook_request(self, obj, method):
         url = self._build_hook_url(obj)
         if isinstance(obj, Game):
             try:
                 message = json.dumps(obj.get_players_balance(True))
+                print(obj.get_players_balance(True))
                 response = requests.request(method, url, data=message, timeout=0.5)
                 response.raise_for_status()
             except requests.exceptions.ConnectionError:
@@ -78,7 +79,7 @@ class TransactionViewSet(DefaultMixin,UpdateHookMixin,viewsets.ModelViewSet):##M
         serializer = TransactionSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            self.post_save(GameSerializer(instance=game).instance)
+            self.post_save(game)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

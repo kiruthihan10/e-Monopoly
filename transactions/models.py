@@ -22,26 +22,20 @@ class Game(models.Model):
         transactions = Transaction.objects.filter(Game=self)
         players = {}
         for transaction in transactions:
-            if transaction.receiver in players or str(transaction.receiver) in players:
-                if user_str:
-                    players[str(transaction.receiver)] += transaction.Amount
-                else:
-                    players[transaction.receiver] += transaction.Amount
+            reciever = transaction.receiver
+            sender = transaction.sender
+            if user_str:
+                ##Convert User to String if needed
+                reciever = str(reciever)
+                sender = str(sender)
+            if reciever in players:
+                players[reciever] += transaction.Amount
             else:
-                if user_str:
-                    players[str(transaction.receiver)] = transaction.Amount
-                else:
-                    players[transaction.receiver] = transaction.Amount
-            if transaction.sender not in players or str(transaction.sender) in players:
-                if user_str:
-                    players[str(transaction.sender)] = -transaction.Amount
-                else:
-                    players[transaction.sender] = -transaction.Amount
+                players[reciever] = transaction.Amount
+            if sender not in players:
+                players[sender] = -transaction.Amount
             else:
-                if user_str:
-                    players[str(transaction.sender)] -= transaction.Amount
-                else:
-                    players[transaction.sender] -= transaction.Amount
+                players[sender] -= transaction.Amount
         return players
 
 class Transaction(models.Model):
