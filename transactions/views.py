@@ -104,6 +104,13 @@ class GameViewSet(DefaultMixin,viewsets.ModelViewSet):## Create a new game and l
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def destroy(self, request,pk=None, *args, **kwargs):
+        game = Game.objects.get(pk=pk)
+        if game.Banker != request.user:
+            return Response({"error": "You are not the banker"}, status=status.HTTP_400_BAD_REQUEST)
+        game.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class PlayerViewSet(DefaultMixin,viewsets.ModelViewSet):## Add new Player into game and get all the past games of a specific player
     queryset = Transaction.objects.all()
     serializer_class = PlayerSerializer
