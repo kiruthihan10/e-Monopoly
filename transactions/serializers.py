@@ -34,6 +34,7 @@ class GameSerializer(serializers.ModelSerializer):
                 players[str(transaction.sender)] = -transaction.Amount
             else:
                 players[str(transaction.sender)] -= transaction.Amount
+        players[str(obj.Banker)] += 20580
         return [{'name':key,'value':value} for key, value in players.items()]
 
 class TransactionSerializer(serializers.ModelSerializer):
