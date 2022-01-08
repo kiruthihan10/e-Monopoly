@@ -34,6 +34,8 @@ class GameSerializer(serializers.ModelSerializer):
                 players[str(transaction.sender)] = -transaction.Amount
             else:
                 players[str(transaction.sender)] -= transaction.Amount
+        if str(obj.Banker) not in players:
+            players[str(obj.Banker)] = 0
         players[str(obj.Banker)] += 20580
         return [{'name':key,'value':value} for key, value in players.items()]
 

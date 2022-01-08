@@ -105,7 +105,8 @@ class GameViewSet(DefaultMixin,viewsets.ModelViewSet):## Create a new game and l
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request,pk=None, *args, **kwargs):
-        game = Game.objects.get(pk=pk)
+        print(pk)
+        game = Game.objects.get(pk=int(pk))
         if game.Banker != request.user:
             return Response({"error": "You are not the banker"}, status=status.HTTP_400_BAD_REQUEST)
         game.delete()
